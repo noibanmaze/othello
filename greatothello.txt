@@ -1,0 +1,254 @@
+//othello
+//白は１　黒は２　おける場所は５...と思っていたのですが、コンソールだと黒背景なので逆になりますね
+#include<stdio.h>
+#define TRUE 1
+#define FALSE 0
+
+int banmen[10][10] = { 0 };//盤面はついにグローバル化
+int direction[9] = { 0 };//reverse関数で使うグローバル方向id
+
+void display(){
+	printf("  x 1 2 3 4 5 6 7 8\ny\n");//これきらい
+	for (int i = 1; i < 9; i++){//壁を表示する必要はないので
+		printf("%d  ", i);
+		for (int j = 1; j < 9; j++){//というか壁をわざわざ4で初期化しなくてもいいことに気付いた
+			switch (banmen[j][i]){//x方向がjでy方向がiです。これ忘れる
+			case 1:printf("○"); break;
+			case 2:printf("●"); break;
+			case 5:printf("◇"); break;//これは無いほうがスタイリッシュ
+			default:printf("□"); break;
+			}
+		}
+		puts("");
+	}
+}
+int colorchange(int mycolor){
+	return mycolor % 2 + 1;
+}
+
+int check(int getx, int gety, int mycolor){//実質mainでいいよお前
+	int k[9] = { 0 };//左上　上　右上　左　中央　右　左下　下　右下　の順に0から方向id
+	int cnt = 0;
+	int point = 0;
+	int enemycolor = colorchange(mycolor);
+
+	for (int i = -1; i < 2; i++){
+		for (int j = -1; j < 2; j++){
+			if (banmen[getx + j][gety + i] == enemycolor){
+				k[cnt] = 1;//置かれた場所から見て敵コマが隣接しているならばその方向id番の配列が1になる
+			}
+			cnt++;
+		}
+	}//旧チェック関数ここまで 意外と短くまとまったぞ！
+	for (int i = 0; i < 9; i++){//おそらくここからバグエリア
+		cnt = 1;
+		if (k[i]){
+			switch (i){// 左上から順に以下略switch
+			case 0:
+				while (banmen[getx - cnt][gety - cnt] == enemycolor){
+					point++;
+					cnt++;
+					direction[i]++;
+				}if (banmen[getx - cnt][gety - cnt] != mycolor){
+					point -= cnt - 1;
+					direction[i] = 0;
+				}
+				break;
+			case 1:
+				while (banmen[getx][gety - cnt] == enemycolor){
+					point++;
+					cnt++;
+					direction[i]++;
+				}if (banmen[getx][gety - cnt] != mycolor){
+					point -= cnt - 1;
+					direction[i] = 0;
+				}
+				break;
+			case 2:
+				while (banmen[getx + cnt][gety - cnt] == enemycolor){
+					point++;
+					cnt++;
+					direction[i]++;
+				}if (banmen[getx + cnt][gety - cnt] != mycolor){
+					point -= cnt - 1;
+					direction[i] = 0;
+				}
+				break;
+			case 3:
+				while (banmen[getx - cnt][gety] == enemycolor){
+					point++;
+					cnt++;
+					direction[i]++;
+				}if (banmen[getx - cnt][gety] != mycolor){
+					point -= cnt - 1;
+					direction[i] = 0;
+				}
+				break;
+			case 4:break;
+			case 5:
+				while (banmen[getx + cnt][gety] == enemycolor){
+					point++;
+					cnt++;
+					direction[i]++;
+				}if (banmen[getx + cnt][gety] != mycolor){
+					point -= cnt - 1;
+					direction[i] = 0;
+				}
+				break;
+			case 6:
+				while (banmen[getx - cnt][gety + cnt] == enemycolor){
+					point++;
+					cnt++;
+					direction[i]++;
+				}if (banmen[getx - cnt][gety + cnt] != mycolor){
+					point -= cnt - 1;
+					direction[i] = 0;
+				}
+				break;
+			case 7:
+				while (banmen[getx][gety + cnt] == enemycolor){
+					point++;
+					cnt++;
+					direction[i]++;
+				}if (banmen[getx][gety + cnt] != mycolor){
+					point -= cnt - 1;
+					direction[i] = 0;
+				}
+				break;
+			case 8:
+				while (banmen[getx + cnt][gety + cnt] == enemycolor){
+					point++;
+					cnt++;
+					direction[i]++;
+				}if (banmen[getx + cnt][gety + cnt] != mycolor){
+					point -= cnt - 1;
+					direction[i] = 0;
+				}
+				break;
+			default:break;
+			}
+		}
+	}
+	return point;//ここで得られる点を返すのはAI作成の材料になりそうだからです
+}
+
+void reverse(int getx, int gety, int mycolor){
+	banmen[getx][gety] = mycolor;
+	for (int i = 0; i < 9; i++){
+//		printf("%d\n", direction[i]);//for debug
+		while (direction[i] > 0){//この中にデクリメント入れたかった
+			switch (i){
+			case 0:banmen[getx - direction[i]][gety - direction[i]] = mycolor;
+//				printf("banmen[%d][%d]左上方向をmycolorに\n", getx - direction[i], gety - direction[i]);//for debug
+				break;
+			case 1:banmen[getx][gety - direction[i]] = mycolor;
+//				printf("banmen[%d][%d]上方向をmycolorに\n", getx, gety - direction[i]);
+				break;
+			case 2:banmen[getx + direction[i]][gety - direction[i]] = mycolor;
+//				printf("banmen[%d][%d]右上方向をmycolorに\n", getx + direction[i], gety - direction[i]);
+				break;
+			case 3:banmen[getx - direction[i]][gety] = mycolor;
+//				printf("banmen[%d][%d]左方向をmycolorに\n", getx - direction[i], gety);
+				break;
+			case 4:break;
+			case 5:banmen[getx + direction[i]][gety] = mycolor;
+//				printf("banmen[%d][%d]右方向をmycolorに\n", getx + direction[i], gety);
+				break;
+			case 6:banmen[getx - direction[i]][gety + direction[i]] = mycolor;
+//				printf("banmen[%d][%d]左下方向をmycolorに\n", getx - direction[i], gety + direction[i]);
+				break;
+			case 7:banmen[getx][gety + direction[i]] = mycolor;
+//				printf("banmen[%d][%d]下方向をmycolorに\n", getx, gety + direction[i]);
+				break;
+			case 8:banmen[getx + direction[i]][gety + direction[i]] = mycolor;
+//				printf("banmen[%d][%d]右下方向をmycolorに\n", getx + direction[i], gety + direction[i]);
+				break;
+			default:break;
+			}
+			direction[i]--;
+		}
+	}
+}
+
+int main(void){
+	int scanx, scany;
+	int i, j, gscnt = 0;
+	bool judge = FALSE, gameset = TRUE;
+	int color = 2;//実はこれこそbool型を使うべきなのでは
+	banmen[4][4] = 2;
+	banmen[5][5] = 2;
+	banmen[4][5] = 1;
+	banmen[5][4] = 1;//初期化軍
+
+	while (1){//実質ここからmain
+		judge = FALSE;//相手ターンになってはいけないときにFALSEになります。
+		gameset = TRUE;//ゲームセットの可能性がある間はTRUEです。
+		for (i = 0; i < 9; i++)
+			direction[i] = 0;//初期化軍2 毎ターン行われる処理になります。
+
+		for (i = 1; i < 9; i++){//check関数ここから
+			for (j = 1; j < 9; j++){
+//				printf("%2d", check(j, i, color));//for debug
+				if (check(j, i, color) && banmen[j][i] == 0){
+					banmen[j][i] = 5;//おける場所を5で返す
+					gameset = FALSE;//この場合少なくともどこかに置けるのでゲーム続行
+					gscnt = 0;
+				}	
+			}
+//			puts("");//for debugset
+		}//check関数ここまで
+		if (gameset == FALSE){
+			display();
+			printf("あなたは");
+			switch (color){
+			case 1:printf("○"); break;
+			case 2:printf("●"); break;
+			default:printf("error"); return -1;
+			}
+			printf("です。\n");
+			printf("x:"); scanf_s("%d", &scanx);
+			printf("y:"); scanf_s("%d", &scany);
+
+			if (banmen[scanx][scany] != 5){
+				printf("そこには　おけないよ\n");
+				judge = FALSE;
+			}
+			else{
+				for (i = 0; i < 9; i++)
+					direction[i] = 0;//一応初期化
+				check(scanx, scany, color);//置く場所が決定したので方向idを取得
+				reverse(scanx, scany, color);//ひっくり返ってターンが渡る
+				judge = TRUE;
+			}
+			for (i = 1; i < 9; i++){//盤面idが5の場所を次ターンに引き継いではいけないので0にしています。
+				for (j = 1; j < 9; j++){
+					if (banmen[j][i] == 5)
+						banmen[j][i] = 0;
+				}
+			}
+			if (judge == TRUE)
+				color = colorchange(color);
+		}
+		else{
+			color = colorchange(color);
+			gscnt++;
+			if (gscnt > 2){
+				break;
+			}
+		}
+	}//集計
+	scanx = 0;
+	scany = 0;
+	for (i = 1; i < 9; i++){
+		for (j = 1; j < 9; j++){
+			if (banmen[j][i] == 1)
+				scanx++;
+			if (banmen[j][i] == 2)
+				scany++;
+		}
+	}
+	display();
+	printf("〇:%d\n●:%d\n", scanx, scany);
+	printf("お疲れさまでした。\n");
+	return 0;
+}
